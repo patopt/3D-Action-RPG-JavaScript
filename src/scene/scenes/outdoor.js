@@ -11,6 +11,8 @@ import { setupEnemies } from '../../character/enemy.js';
 import { Health } from '../../character/health.js';
 import addSword from '../../character/equips/held.js';
 
+import { initGame } from '../../game/index.js';
+
 export async function createOutdoor(engine) {
     const scene = new BABYLON.Scene(engine);
 
@@ -54,7 +56,7 @@ export async function createOutdoor(engine) {
     const light = setupLighting(scene);
 
 
-    setupShadows(light, hero);
+    const shadowGen = setupShadows(light, hero);
     setupPostProcessing(scene, camera);
 
     loadHPModels(scene, engine, models["HPBar"]);
@@ -63,9 +65,13 @@ export async function createOutdoor(engine) {
     createTrail(scene, engine, sword, 0.2, 40, new BABYLON.Vector3(0, 0, 0.32));
 
     const slime1 = models["Slime1"];
-    setupEnemies(scene, character, terrain, 7, slime1);
+    const enemies = setupEnemies(scene, character, terrain, 7, slime1);
 
     VFX['fireBall'] = addFireball(scene, engine);
+
+    // Wire up the full game layer: HUD, menus, mobile controls, quests,
+    // inventory, NPCs, world props and combat rewards.
+    initGame({ scene, character, camera, engine, terrain, enemies, anim, dummyAggregate, shadowGen });
 
     scene.executeWhenReady(() => {
         scene.render();
@@ -166,6 +172,7 @@ function setupShadows(light, shadowCaster) {
     shadowGenerator.farPlane = 10000;
     shadowGenerator.minZ = -100;
     shadowGenerator.addShadowCaster(shadowCaster);
+    return shadowGenerator;
 }
 
 function loadHPModels(scene, engine, HPBar) {
